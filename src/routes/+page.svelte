@@ -7,11 +7,12 @@
 	import SettingsPanel from '$lib/components/SettingsPanel.svelte';
 
 	let isDragging = $state(false);
+	let dragCounter = 0;
 	let showRecovery = $state(false);
 	let crashState: { scrollPosition: number; mode: 'edit' | 'prompt' } | null = null;
 
-	// Check for crash recovery on mount
-	$effect(() => {
+	// Check for crash recovery synchronously (before effects overwrite crash state)
+	{
 		const state = loadCrashState();
 		if (state && state.mode === 'prompt') {
 			crashState = state;
@@ -19,7 +20,7 @@
 		} else {
 			clearCrashState();
 		}
-	});
+	}
 
 	function recoverSession() {
 		if (crashState) {
@@ -38,11 +39,16 @@
 
 	function handleDragOver(e: DragEvent) {
 		e.preventDefault();
-		if (scriptStore.mode === 'edit') isDragging = true;
+		if (scriptStore.mode === 'edit') {
+			dragCounter++;
+			isDragging = true;
+		}
 	}
 
-	function handleDragLeave(e: DragEvent) {
-		if (e.relatedTarget === null || !e.currentTarget) {
+	function handleDragLeave(_e: DragEvent) {
+		dragCounter--;
+		if (dragCounter <= 0) {
+			dragCounter = 0;
 			isDragging = false;
 		}
 	}
@@ -50,6 +56,7 @@
 	async function handleDrop(e: DragEvent) {
 		e.preventDefault();
 		isDragging = false;
+		dragCounter = 0;
 
 		const file = e.dataTransfer?.files?.[0];
 		if (!file) return;

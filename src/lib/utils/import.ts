@@ -23,9 +23,10 @@ export async function importTxt(file: File): Promise<string> {
 }
 
 export async function importDocx(file: File): Promise<string> {
-	const mammoth = await import('mammoth');
+	const mammothModule = await import('mammoth');
+	const mammoth = (mammothModule as Record<string, unknown>).default ?? mammothModule;
 	const arrayBuffer = await file.arrayBuffer();
-	const result = await mammoth.convertToHtml({ arrayBuffer });
+	const result = await (mammoth as typeof mammothModule).convertToHtml({ arrayBuffer });
 	return result.value;
 }
 

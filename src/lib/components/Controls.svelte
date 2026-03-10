@@ -80,7 +80,7 @@
 			onclick={() => (settings.showTashkeel = !settings.showTashkeel)}
 			title="التشكيل"
 		>
-			<span style="font-size: 14px">{settings.showTashkeel ? 'شَكل' : 'شكل'}</span>
+			<span style="font-size: 1.4rem">{settings.showTashkeel ? 'شَكل' : 'شكل'}</span>
 		</button>
 
 		<button
@@ -112,13 +112,13 @@
 <style>
 	.controls {
 		background: linear-gradient(transparent, var(--controls-bg, rgba(0, 0, 0, 0.85)) 30%);
-		padding: 3rem 2rem 1.25rem;
+		padding: 3rem 2rem 1.5rem;
 	}
 
 	.controls-row {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
+		gap: 1.5rem;
 		justify-content: center;
 		flex-wrap: wrap;
 	}
@@ -127,8 +127,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 42px;
-		height: 42px;
+		width: 72px;
+		height: 72px;
 		padding: 0;
 		border-radius: 50%;
 		background: rgba(255, 255, 255, 0.1);
@@ -147,13 +147,13 @@
 	}
 
 	.btn-icon svg {
-		width: 18px;
-		height: 18px;
+		width: 32px;
+		height: 32px;
 	}
 
 	.btn-play {
-		width: 52px;
-		height: 52px;
+		width: 88px;
+		height: 88px;
 		background: var(--accent);
 	}
 
@@ -162,16 +162,16 @@
 	}
 
 	.btn-play svg {
-		width: 22px;
-		height: 22px;
+		width: 40px;
+		height: 40px;
 	}
 
 	.control-group {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: 0.75rem;
 		color: rgba(255, 255, 255, 0.7);
-		font-size: 0.85rem;
+		font-size: 1.2rem;
 	}
 
 	.control-label {
@@ -179,20 +179,20 @@
 	}
 
 	.control-value {
-		min-width: 2rem;
+		min-width: 2.5rem;
 		text-align: center;
 		font-variant-numeric: tabular-nums;
 	}
 
 	.control-group input[type='range'] {
-		width: 90px;
+		width: 140px;
 		background: rgba(255, 255, 255, 0.15);
 	}
 
 	.controls-hint {
 		text-align: center;
-		margin-top: 0.75rem;
-		font-size: 0.7rem;
+		margin-top: 1rem;
+		font-size: 0.85rem;
 		color: rgba(255, 255, 255, 0.25);
 	}
 </style>

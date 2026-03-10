@@ -55,7 +55,16 @@ export function loadScript(): void {
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (!raw) return;
 		const data = JSON.parse(raw);
-		if (data.text != null) scriptStore.text = data.text;
+		if (data.text != null) {
+			// Migrate legacy plain text (no HTML tags) to HTML paragraphs
+			if (!/<[a-z][\s\S]*>/i.test(data.text.trim())) {
+				data.text = data.text
+					.split('\n')
+					.map((line: string) => (line.trim() === '' ? '<p></p>' : `<p>${line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`))
+					.join('');
+			}
+			scriptStore.text = data.text;
+		}
 		if (data.title != null) scriptStore.title = data.title;
 	} catch {}
 }

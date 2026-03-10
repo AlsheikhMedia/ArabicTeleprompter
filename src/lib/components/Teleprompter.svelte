@@ -9,7 +9,7 @@
 	let animationFrameId: number;
 	let lastTimestamp = 0;
 	let controlsVisible = $state(true);
-	let controlsTimeout: number;
+	let autoHideTimer: number;
 
 	const fontConfig = $derived(FONTS.find((f) => f.name === settings.fontFamily));
 	const displayHtml = $derived(
@@ -44,14 +44,11 @@
 		return () => cancelAnimationFrame(animationFrameId);
 	});
 
-	// Broadcast state for dual-screen sync
-	let syncThrottle = 0;
+	// Broadcast state for dual-screen sync (debounced)
+	let syncTimer: number | undefined;
 	$effect(() => {
-		const now = Date.now();
-		if (now - syncThrottle < 50) return;
-		syncThrottle = now;
-
-		broadcastState({
+		// Read all reactive values first so Svelte tracks them
+		const state = {
 			scrollPosition: scriptStore.scrollPosition,
 			isPlaying: scriptStore.isPlaying,
 			text: scriptStore.text,
@@ -61,23 +58,41 @@
 			margins: settings.margins,
 			mirrorMode: settings.mirrorMode,
 			showTashkeel: settings.showTashkeel
-		});
+		};
+
+		clearTimeout(syncTimer);
+		syncTimer = window.setTimeout(() => {
+			broadcastState(state);
+		}, 50);
+
+		return () => clearTimeout(syncTimer);
 	});
 
-	function showControls() {
-		controlsVisible = true;
-		clearTimeout(controlsTimeout);
-		controlsTimeout = window.setTimeout(() => {
-			if (scriptStore.isPlaying) controlsVisible = false;
-		}, 3000);
+	function toggleControls() {
+		controlsVisible = !controlsVisible;
+		scheduleAutoHide();
 	}
+
+	function scheduleAutoHide() {
+		clearTimeout(autoHideTimer);
+		if (controlsVisible) {
+			autoHideTimer = window.setTimeout(() => {
+				controlsVisible = false;
+			}, 5000);
+		}
+	}
+
+	// Auto-hide controls after 5 seconds on mount
+	$effect(() => {
+		scheduleAutoHide();
+		return () => clearTimeout(autoHideTimer);
+	});
 
 	function handleKeydown(e: KeyboardEvent) {
 		switch (e.key) {
 			case ' ':
 				e.preventDefault();
 				scriptStore.isPlaying = !scriptStore.isPlaying;
-				showControls();
 				break;
 			case 'ArrowUp':
 			case 'PageUp':
@@ -95,11 +110,9 @@
 			case '+':
 			case '=':
 				settings.scrollSpeed = Math.min(10, settings.scrollSpeed + 0.5);
-				showControls();
 				break;
 			case '-':
 				settings.scrollSpeed = Math.max(0.5, settings.scrollSpeed - 0.5);
-				showControls();
 				break;
 			case 'Escape':
 				scriptStore.mode = 'edit';
@@ -108,7 +121,6 @@
 			case 'm':
 			case 'M':
 				settings.mirrorMode = !settings.mirrorMode;
-				showControls();
 				break;
 		}
 	}
@@ -116,10 +128,6 @@
 	function handleWheel(e: WheelEvent) {
 		e.preventDefault();
 		scriptStore.scrollPosition = Math.max(0, scriptStore.scrollPosition + e.deltaY * 0.5);
-	}
-
-	function handleMouseMove() {
-		showControls();
 	}
 
 	let touchStartY = 0;
@@ -142,7 +150,6 @@
 	function handleTouchEnd() {
 		if (!wasTouchDrag) {
 			scriptStore.isPlaying = !scriptStore.isPlaying;
-			showControls();
 		}
 	}
 </script>
@@ -152,7 +159,6 @@
 <div
 	class="teleprompter"
 	role="presentation"
-	onmousemove={handleMouseMove}
 	onwheel={handleWheel}
 	ontouchstart={handleTouchStart}
 	ontouchmove={handleTouchMove}
@@ -176,9 +182,30 @@
 		{@html displayHtml}
 	</div>
 
-	<div class="controls-overlay" class:visible={controlsVisible}>
-		<Controls />
-	</div>
+	{#if controlsVisible}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="controls-overlay"
+			onmousemove={scheduleAutoHide}
+			onmousedown={scheduleAutoHide}
+			oninput={scheduleAutoHide}
+			onclick={scheduleAutoHide}
+		>
+			<Controls />
+		</div>
+	{/if}
+
+	{#if !controlsVisible}
+		<button
+			class="controls-toggle"
+			onclick={toggleControls}
+			title="إظهار لوحة التحكم"
+		>
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+				<path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+				<path d="m15 5 4 4" />
+			</svg>
+		</button>
+	{/if}
 </div>
 
 <style>
@@ -188,10 +215,6 @@
 		background: var(--prompter-bg, #000);
 		overflow: hidden;
 		z-index: 100;
-		cursor: none;
-	}
-
-	.teleprompter:hover {
 		cursor: default;
 	}
 
@@ -249,14 +272,30 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
-		opacity: 0;
-		transition: opacity 0.3s ease;
 		z-index: 102;
-		pointer-events: none;
 	}
 
-	.controls-overlay.visible {
-		opacity: 1;
-		pointer-events: auto;
+	.controls-toggle {
+		position: fixed;
+		bottom: 16px;
+		left: 16px;
+		z-index: 102;
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.1);
+		color: rgba(255, 255, 255, 0.4);
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		padding: 0;
+		transition: background 0.2s, color 0.2s;
+	}
+
+	.controls-toggle:hover {
+		background: rgba(255, 255, 255, 0.2);
+		color: rgba(255, 255, 255, 0.8);
 	}
 </style>

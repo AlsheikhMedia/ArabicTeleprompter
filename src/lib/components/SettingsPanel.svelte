@@ -102,12 +102,12 @@
 	.panel {
 		position: fixed;
 		top: 0;
-		right: 0;
+		left: 0;
 		bottom: 0;
 		width: 340px;
 		max-width: 90vw;
 		background: var(--bg-secondary);
-		border-left: 1px solid var(--border);
+		border-right: 1px solid var(--border);
 		z-index: 201;
 		display: flex;
 		flex-direction: column;
@@ -115,7 +115,7 @@
 	}
 
 	@keyframes slide-in {
-		from { transform: translateX(100%); }
+		from { transform: translateX(-100%); }
 		to { transform: translateX(0); }
 	}
 

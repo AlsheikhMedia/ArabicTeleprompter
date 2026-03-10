@@ -14,7 +14,16 @@
 			isBold = editor.isActive('bold');
 			isItalic = editor.isActive('italic');
 			isUnderline = editor.isActive('underline');
-			const dir = editor.getAttributes('paragraph').dir;
+			// Read dir from the actual paragraph node at the cursor
+			const resolvedPos = (editor.state.selection as any)['$from'];
+			let dir = 'rtl';
+			for (let d = resolvedPos.depth; d >= 0; d--) {
+				const node = resolvedPos.node(d);
+				if (node.type.name === 'paragraph' || node.type.name === 'heading') {
+					dir = node.attrs.dir || 'rtl';
+					break;
+				}
+			}
 			isRtl = dir !== 'ltr';
 		};
 
@@ -28,20 +37,51 @@
 		};
 	});
 
+	let savedSelection: { from: number; to: number } | null = null;
+
+	function saveSelection() {
+		const { from, to } = editor.state.selection;
+		savedSelection = { from, to };
+	}
+
 	function setColor(e: Event) {
 		const color = (e.target as HTMLInputElement).value;
 		textColor = color;
-		editor.chain().focus().setColor(color).run();
+		if (savedSelection) {
+			editor.chain().focus()
+				.setTextSelection(savedSelection)
+				.setColor(color)
+				.run();
+		} else {
+			editor.chain().focus().setColor(color).run();
+		}
 	}
 
 	function setHighlight(e: Event) {
 		const color = (e.target as HTMLInputElement).value;
-		editor.chain().focus().toggleHighlight({ color }).run();
+		if (savedSelection) {
+			editor.chain().focus()
+				.setTextSelection(savedSelection)
+				.toggleHighlight({ color })
+				.run();
+		} else {
+			editor.chain().focus().toggleHighlight({ color }).run();
+		}
 	}
 
 	function toggleDirection() {
 		const newDir = isRtl ? 'ltr' : 'rtl';
-		editor.chain().focus().setTextDirection(newDir).run();
+		const { state, view } = editor;
+		const { from, to } = state.selection;
+		const tr = state.tr;
+		state.doc.nodesBetween(from, to, (node: any, pos: number) => {
+			if (node.type.name === 'paragraph' || node.type.name === 'heading') {
+				const mapped = tr.mapping.map(pos);
+				tr.setNodeMarkup(mapped, undefined, { ...node.attrs, dir: newDir });
+			}
+		});
+		view.dispatch(tr);
+		editor.commands.focus();
 	}
 
 	function insertSegment() {
@@ -81,21 +121,42 @@
 	<div class="toolbar-sep"></div>
 
 	<div class="toolbar-group">
-		<label class="color-btn" title="لون النص">
-			<span class="color-swatch" style="background: {textColor}"></span>
-			<input type="color" value={textColor} onchange={setColor} />
+		<label class="color-btn" title="لون النص" onmousedown={saveSelection}>
+			<span class="color-icon">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+					<path d="M5 21h14M12 3l-5 14h2.5l1.2-3.5h4.6L16.5 17H19L14 3h-4z" />
+				</svg>
+				<span class="color-underline" style="background: {textColor}"></span>
+			</span>
+			<input type="color" value={textColor} oninput={setColor} />
 		</label>
-		<label class="color-btn" title="تظليل">
-			<span class="highlight-label">هـ</span>
-			<input type="color" value="#ffd43b" onchange={setHighlight} />
+		<label class="color-btn" title="تظليل" onmousedown={saveSelection}>
+			<span class="color-icon">
+				<svg viewBox="0 0 24 24" fill="none" width="24" height="24">
+					<rect x="2" y="14" width="20" height="7" rx="1" fill="currentColor" opacity="0.3" />
+					<path d="M12 3l-5 14h2.5l1.2-3.5h4.6L16.5 17H19L14 3h-4z" stroke="currentColor" stroke-width="2" fill="none" />
+				</svg>
+				<span class="color-underline" style="background: #ffd43b"></span>
+			</span>
+			<input type="color" value="#ffd43b" oninput={setHighlight} />
 		</label>
 	</div>
 
 	<div class="toolbar-sep"></div>
 
 	<div class="toolbar-group">
-		<button class="format-btn" class:active={!isRtl} onclick={toggleDirection} title="اتجاه النص">
-			{isRtl ? 'عربي' : 'LTR'}
+		<button class="format-btn" onclick={toggleDirection} title="اتجاه النص">
+			{#if isRtl}
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+					<path d="M21 12H3" />
+					<path d="M9 18l-6-6 6-6" />
+				</svg>
+			{:else}
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+					<path d="M3 12h18" />
+					<path d="M15 6l6 6-6 6" />
+				</svg>
+			{/if}
 		</button>
 	</div>
 
@@ -112,8 +173,8 @@
 	.editor-toolbar {
 		display: flex;
 		align-items: center;
-		gap: 0.25rem;
-		padding: 0.4rem 1rem;
+		gap: 0.5rem;
+		padding: 0.75rem 1.25rem;
 		background: var(--bg-secondary);
 		border-bottom: 1px solid var(--border);
 		flex-wrap: wrap;
@@ -122,22 +183,22 @@
 	.toolbar-group {
 		display: flex;
 		align-items: center;
-		gap: 0.2rem;
+		gap: 0.4rem;
 	}
 
 	.toolbar-sep {
 		width: 1px;
-		height: 22px;
+		height: 40px;
 		background: var(--border);
-		margin: 0 0.4rem;
+		margin: 0 0.6rem;
 	}
 
 	.format-btn {
-		min-width: 32px;
-		height: 32px;
-		padding: 0 0.5rem;
-		font-size: 0.85rem;
-		border-radius: 4px;
+		min-width: 48px;
+		height: 48px;
+		padding: 0 0.75rem;
+		font-size: 1.2rem;
+		border-radius: 6px;
 		background: transparent;
 		color: var(--text-secondary);
 		display: flex;
@@ -160,10 +221,10 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 32px;
-		height: 32px;
+		width: 48px;
+		height: 48px;
 		cursor: pointer;
-		border-radius: 4px;
+		border-radius: 6px;
 	}
 
 	.color-btn:hover {
@@ -179,18 +240,17 @@
 		height: 100%;
 	}
 
-	.color-swatch {
-		width: 16px;
-		height: 16px;
-		border-radius: 3px;
-		border: 1px solid var(--border);
+	.color-icon {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 3px;
+		color: var(--text-secondary);
 	}
 
-	.highlight-label {
-		font-size: 0.9rem;
-		color: var(--text-secondary);
-		background: rgba(255, 212, 59, 0.3);
-		padding: 0 4px;
+	.color-underline {
+		width: 24px;
+		height: 4px;
 		border-radius: 2px;
 	}
 </style>

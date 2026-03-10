@@ -7,13 +7,16 @@
 	import { Highlight } from '@tiptap/extension-highlight';
 	import { TextDirection } from '$lib/extensions/text-direction';
 	import { SegmentMarker } from '$lib/extensions/segment-marker';
+	import { TashkeelToggle, tashkeelPluginKey } from '$lib/extensions/tashkeel-toggle';
 	import { scriptStore, saveScript } from '$lib/stores/script.svelte';
 	import { settings, FONTS } from '$lib/stores/settings.svelte';
 	import { countWordsInHtml } from '$lib/utils/import';
 	import EditorToolbar from './EditorToolbar.svelte';
 
 	let editorElement: HTMLDivElement | undefined = $state();
-	let editor: Editor | undefined;
+	// Editor instance stored outside $state — Svelte proxies break TipTap class internals.
+	// Reactivity is handled via the editorReady flag instead.
+	let editorRef: { current: Editor | undefined } = { current: undefined };
 	let editorReady = $state(false);
 	let lastContentVersion = 0;
 
@@ -33,7 +36,8 @@
 				Color,
 				Highlight.configure({ multicolor: true }),
 				TextDirection,
-				SegmentMarker
+				SegmentMarker,
+				TashkeelToggle.configure({ hideTashkeel: !settings.showTashkeel })
 			],
 			content: scriptStore.text,
 			editorProps: {
@@ -51,13 +55,13 @@
 			}
 		});
 
-		editor = ed;
+		editorRef.current = ed;
 		editorReady = true;
 		lastContentVersion = scriptStore._contentVersion;
 
 		return () => {
 			ed.destroy();
-			editor = undefined;
+			editorRef.current = undefined;
 			editorReady = false;
 		};
 	});
@@ -65,16 +69,25 @@
 	// Watch for external content changes (e.g. from file import)
 	$effect(() => {
 		const version = scriptStore._contentVersion;
-		if (version > lastContentVersion && editor) {
-			editor.commands.setContent(scriptStore.text);
+		if (version > lastContentVersion && editorRef.current) {
+			editorRef.current.commands.setContent(scriptStore.text);
 			lastContentVersion = version;
 		}
+	});
+
+	// Toggle tashkeel visibility via ProseMirror decorations
+	$effect(() => {
+		const hide = !settings.showTashkeel;
+		const ed = editorRef.current;
+		if (!ed) return;
+		const tr = ed.state.tr.setMeta(tashkeelPluginKey, { hide });
+		ed.view.dispatch(tr);
 	});
 </script>
 
 <main class="editor" dir="rtl">
-	{#if editorReady && editor}
-		<EditorToolbar {editor} />
+	{#if editorReady && editorRef.current}
+		<EditorToolbar editor={editorRef.current} />
 	{/if}
 
 	<div class="editor-stats">
@@ -85,8 +98,9 @@
 
 	<div
 		class="editor-area"
+		class:mirrored={settings.mirrorMode}
 		bind:this={editorElement}
-		style="--editor-font: {fontConfig?.family ?? "'Amiri', serif"}"
+		style="--editor-font: {fontConfig?.family ?? "'Amiri', serif"}; --editor-font-size: {settings.fontSize}px; --editor-line-height: {settings.lineHeight}; --editor-margins: {settings.margins}%"
 	></div>
 </main>
 
@@ -118,14 +132,19 @@
 		background: var(--bg-primary);
 	}
 
+	.editor-area.mirrored :global(.prosemirror-editor) {
+		transform: scaleX(-1);
+	}
+
+
 	.editor-area :global(.prosemirror-editor) {
 		direction: rtl;
 		text-align: right;
 		outline: none;
 		min-height: 100%;
-		padding: 1.5rem 2rem;
-		font-size: 1.2rem;
-		line-height: 2;
+		padding: 1.5rem var(--editor-margins, 2rem);
+		font-size: var(--editor-font-size, 1.2rem);
+		line-height: var(--editor-line-height, 2);
 		font-family: var(--editor-font);
 		color: var(--text-primary);
 	}
@@ -163,5 +182,12 @@
 	.editor-area :global(.prosemirror-editor mark) {
 		border-radius: 2px;
 		padding: 0 2px;
+	}
+
+	.editor-area :global(.tashkeel-hidden) {
+		font-size: 0;
+		letter-spacing: 0;
+		line-height: 0;
+		display: inline;
 	}
 </style>

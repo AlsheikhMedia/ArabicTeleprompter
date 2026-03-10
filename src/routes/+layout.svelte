@@ -39,11 +39,16 @@
 		saveScript();
 	});
 
-	// Crash recovery: save state periodically
+	// Crash recovery: save state periodically (debounced to avoid 60fps writes)
+	let crashSaveTimer: number | undefined;
 	$effect(() => {
 		void scriptStore.scrollPosition;
 		void scriptStore.mode;
-		saveCrashState();
+		clearTimeout(crashSaveTimer);
+		crashSaveTimer = window.setTimeout(() => {
+			saveCrashState();
+		}, 2000);
+		return () => clearTimeout(crashSaveTimer);
 	});
 
 	// Mark clean exit on beforeunload

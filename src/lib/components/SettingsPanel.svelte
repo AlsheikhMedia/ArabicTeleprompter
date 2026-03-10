@@ -22,31 +22,24 @@
 
 		<div class="settings-body">
 			<div class="setting">
-				<label for="setting-fontsize">حجم الخط</label>
+				<label for="s-fontsize">حجم الخط</label>
 				<div class="setting-control">
-					<input id="setting-fontsize" type="range" min="24" max="120" step="2" bind:value={settings.fontSize} />
+					<input id="s-fontsize" type="range" min="24" max="120" step="2" bind:value={settings.fontSize} />
 					<span class="setting-value">{settings.fontSize}px</span>
 				</div>
 			</div>
 
 			<div class="setting">
-				<label for="setting-speed">سرعة التمرير</label>
+				<label for="s-speed">سرعة التمرير</label>
 				<div class="setting-control">
-					<input
-						id="setting-speed"
-						type="range"
-						min="0.5"
-						max="10"
-						step="0.5"
-						bind:value={settings.scrollSpeed}
-					/>
+					<input id="s-speed" type="range" min="0.5" max="10" step="0.5" bind:value={settings.scrollSpeed} />
 					<span class="setting-value">{settings.scrollSpeed}</span>
 				</div>
 			</div>
 
 			<div class="setting">
-				<label for="setting-font">الخط</label>
-				<select id="setting-font" bind:value={settings.fontFamily}>
+				<label for="s-font">الخط</label>
+				<select id="s-font" bind:value={settings.fontFamily}>
 					{#each FONTS as font}
 						<option value={font.name}>{font.label}</option>
 					{/each}
@@ -54,31 +47,46 @@
 			</div>
 
 			<div class="setting">
-				<label for="setting-lineheight">تباعد الأسطر</label>
+				<label for="s-lineheight">تباعد الأسطر</label>
 				<div class="setting-control">
-					<input
-						id="setting-lineheight"
-						type="range"
-						min="1.2"
-						max="3.5"
-						step="0.1"
-						bind:value={settings.lineHeight}
-					/>
+					<input id="s-lineheight" type="range" min="1.2" max="3.5" step="0.1" bind:value={settings.lineHeight} />
 					<span class="setting-value">{settings.lineHeight}</span>
 				</div>
 			</div>
 
 			<div class="setting">
-				<label for="setting-margins">الهوامش</label>
+				<label for="s-margins">الهوامش</label>
 				<div class="setting-control">
-					<input id="setting-margins" type="range" min="2" max="25" step="1" bind:value={settings.margins} />
+					<input id="s-margins" type="range" min="2" max="25" step="1" bind:value={settings.margins} />
 					<span class="setting-value">{settings.margins}%</span>
 				</div>
+			</div>
+
+			<div class="setting-divider"></div>
+
+			<div class="setting">
+				<label class="toggle-label">
+					<span>وضع المرآة</span>
+					<input type="checkbox" bind:checked={settings.mirrorMode} />
+					<span class="toggle-track">
+						<span class="toggle-thumb"></span>
+					</span>
+				</label>
+			</div>
+
+			<div class="setting">
+				<label class="toggle-label">
+					<span>عرض التشكيل</span>
+					<input type="checkbox" bind:checked={settings.showTashkeel} />
+					<span class="toggle-track">
+						<span class="toggle-thumb"></span>
+					</span>
+				</label>
 			</div>
 		</div>
 
 		<div class="panel-footer">
-			<p>التلقين العربي v0.1.0</p>
+			<p>التلقين العربي v0.5.0</p>
 		</div>
 	</aside>
 {/if}
@@ -107,12 +115,8 @@
 	}
 
 	@keyframes slide-in {
-		from {
-			transform: translateX(100%);
-		}
-		to {
-			transform: translateX(0);
-		}
+		from { transform: translateX(100%); }
+		to { transform: translateX(0); }
 	}
 
 	.panel-header {
@@ -184,6 +188,53 @@
 
 	.setting select {
 		width: 100%;
+	}
+
+	.setting-divider {
+		height: 1px;
+		background: var(--border);
+		margin: 0.25rem 0;
+	}
+
+	.toggle-label {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.toggle-label input[type='checkbox'] {
+		display: none;
+	}
+
+	.toggle-track {
+		width: 40px;
+		height: 22px;
+		background: var(--border);
+		border-radius: 11px;
+		position: relative;
+		transition: background 0.2s;
+		flex-shrink: 0;
+	}
+
+	.toggle-label input:checked + .toggle-track {
+		background: var(--accent);
+	}
+
+	.toggle-thumb {
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 18px;
+		height: 18px;
+		background: #fff;
+		border-radius: 50%;
+		transition: transform 0.2s;
+	}
+
+	.toggle-label input:checked + .toggle-track .toggle-thumb {
+		transform: translateX(18px);
 	}
 
 	.panel-footer {

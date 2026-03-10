@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { settings, FONTS } from '$lib/stores/settings.svelte';
 	import { scriptStore } from '$lib/stores/script.svelte';
+	import { stripTashkeelFromHtml } from '$lib/utils/tashkeel';
+	import { broadcastState } from '$lib/utils/sync';
 	import Controls from './Controls.svelte';
 
 	let textEl: HTMLDivElement | undefined = $state();
@@ -10,8 +12,9 @@
 	let controlsTimeout: number;
 
 	const fontConfig = $derived(FONTS.find((f) => f.name === settings.fontFamily));
-
-	const lines = $derived(scriptStore.text.split('\n'));
+	const displayHtml = $derived(
+		settings.showTashkeel ? scriptStore.text : stripTashkeelFromHtml(scriptStore.text)
+	);
 
 	function scrollLoop(timestamp: number) {
 		if (lastTimestamp > 0 && scriptStore.isPlaying) {
@@ -41,6 +44,26 @@
 		return () => cancelAnimationFrame(animationFrameId);
 	});
 
+	// Broadcast state for dual-screen sync
+	let syncThrottle = 0;
+	$effect(() => {
+		const now = Date.now();
+		if (now - syncThrottle < 50) return;
+		syncThrottle = now;
+
+		broadcastState({
+			scrollPosition: scriptStore.scrollPosition,
+			isPlaying: scriptStore.isPlaying,
+			text: scriptStore.text,
+			fontSize: settings.fontSize,
+			fontFamily: settings.fontFamily,
+			lineHeight: settings.lineHeight,
+			margins: settings.margins,
+			mirrorMode: settings.mirrorMode,
+			showTashkeel: settings.showTashkeel
+		});
+	});
+
 	function showControls() {
 		controlsVisible = true;
 		clearTimeout(controlsTimeout);
@@ -57,12 +80,17 @@
 				showControls();
 				break;
 			case 'ArrowUp':
+			case 'PageUp':
 				e.preventDefault();
-				scriptStore.scrollPosition = Math.max(0, scriptStore.scrollPosition - 100);
+				scriptStore.scrollPosition = Math.max(
+					0,
+					scriptStore.scrollPosition - (e.key === 'PageUp' ? 500 : 100)
+				);
 				break;
 			case 'ArrowDown':
+			case 'PageDown':
 				e.preventDefault();
-				scriptStore.scrollPosition += 100;
+				scriptStore.scrollPosition += e.key === 'PageDown' ? 500 : 100;
 				break;
 			case '+':
 			case '=':
@@ -77,7 +105,17 @@
 				scriptStore.mode = 'edit';
 				scriptStore.isPlaying = false;
 				break;
+			case 'm':
+			case 'M':
+				settings.mirrorMode = !settings.mirrorMode;
+				showControls();
+				break;
 		}
+	}
+
+	function handleWheel(e: WheelEvent) {
+		e.preventDefault();
+		scriptStore.scrollPosition = Math.max(0, scriptStore.scrollPosition + e.deltaY * 0.5);
 	}
 
 	function handleMouseMove() {
@@ -115,6 +153,7 @@
 	class="teleprompter"
 	role="presentation"
 	onmousemove={handleMouseMove}
+	onwheel={handleWheel}
 	ontouchstart={handleTouchStart}
 	ontouchmove={handleTouchMove}
 	ontouchend={handleTouchEnd}
@@ -126,7 +165,7 @@
 		bind:this={textEl}
 		dir="rtl"
 		style="
-			transform: translateY(-{scriptStore.scrollPosition}px);
+			transform: {settings.mirrorMode ? 'scaleX(-1) ' : ''}translateY(-{scriptStore.scrollPosition}px);
 			font-size: {settings.fontSize}px;
 			font-family: {fontConfig?.family ?? "'Amiri', serif"};
 			line-height: {settings.lineHeight};
@@ -134,16 +173,7 @@
 			padding-right: {settings.margins}%;
 		"
 	>
-		{#each lines as line}
-			{#if line.trim() === ''}
-				<div
-					class="empty-line"
-					style="height: {settings.fontSize * settings.lineHeight * 0.5}px"
-				></div>
-			{:else}
-				<p>{line}</p>
-			{/if}
-		{/each}
+		{@html displayHtml}
 	</div>
 
 	<div class="controls-overlay" class:visible={controlsVisible}>
@@ -187,9 +217,31 @@
 		-webkit-user-select: none;
 	}
 
-	.text-content p {
+	.text-content :global(p) {
 		margin: 0;
 		padding: 0.1em 0;
+	}
+
+	.text-content :global(p:empty) {
+		min-height: 0.5em;
+	}
+
+	.text-content :global(p[dir='ltr']) {
+		text-align: left;
+	}
+
+	.text-content :global(mark) {
+		border-radius: 2px;
+		padding: 0 3px;
+	}
+
+	.text-content :global(.segment-marker) {
+		border-top: 2px solid rgba(255, 255, 255, 0.15);
+		margin: 0.8em 0;
+		padding: 0.3em 0;
+		color: rgba(255, 255, 255, 0.35);
+		font-size: 0.6em;
+		text-align: center;
 	}
 
 	.controls-overlay {

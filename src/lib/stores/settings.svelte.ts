@@ -21,6 +21,8 @@ class SettingsStore {
 	margins = $state(10);
 	highContrast = $state(true);
 	showSettings = $state(false);
+	mirrorMode = $state(false);
+	showTashkeel = $state(true);
 }
 
 export const settings = new SettingsStore();
@@ -36,7 +38,9 @@ export function saveSettings(): void {
 				fontFamily: settings.fontFamily,
 				lineHeight: settings.lineHeight,
 				margins: settings.margins,
-				highContrast: settings.highContrast
+				highContrast: settings.highContrast,
+				mirrorMode: settings.mirrorMode,
+				showTashkeel: settings.showTashkeel
 			})
 		);
 	} catch {
@@ -56,6 +60,8 @@ export function loadSettings(): void {
 		if (data.lineHeight != null) settings.lineHeight = data.lineHeight;
 		if (data.margins != null) settings.margins = data.margins;
 		if (data.highContrast != null) settings.highContrast = data.highContrast;
+		if (data.mirrorMode != null) settings.mirrorMode = data.mirrorMode;
+		if (data.showTashkeel != null) settings.showTashkeel = data.showTashkeel;
 	} catch {
 		// corrupted data, use defaults
 	}

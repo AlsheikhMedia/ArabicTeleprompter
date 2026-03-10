@@ -1,0 +1,12 @@
+const TASHKEEL_REGEX =
+	/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g;
+
+export function stripTashkeel(text: string): string {
+	return text.replace(TASHKEEL_REGEX, '');
+}
+
+export function stripTashkeelFromHtml(html: string): string {
+	return html.replace(/>([^<]*)</g, (_match, textContent: string) => {
+		return '>' + textContent.replace(TASHKEEL_REGEX, '') + '<';
+	});
+}

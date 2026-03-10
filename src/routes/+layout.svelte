@@ -9,7 +9,7 @@
 	import '@fontsource/tajawal/400.css';
 	import '@fontsource/tajawal/700.css';
 	import { loadSettings, saveSettings } from '$lib/stores/settings.svelte';
-	import { loadScript, saveScript } from '$lib/stores/script.svelte';
+	import { loadScript, saveScript, saveCrashState, clearCrashState } from '$lib/stores/script.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { scriptStore } from '$lib/stores/script.svelte';
 	import type { Snippet } from 'svelte';
@@ -19,21 +19,43 @@
 	loadSettings();
 	loadScript();
 
+	// Auto-save settings
 	$effect(() => {
-		// Track reactive state for auto-save
 		void settings.fontSize;
 		void settings.scrollSpeed;
 		void settings.fontFamily;
 		void settings.lineHeight;
 		void settings.margins;
 		void settings.highContrast;
+		void settings.mirrorMode;
+		void settings.showTashkeel;
 		saveSettings();
 	});
 
+	// Auto-save script
 	$effect(() => {
 		void scriptStore.text;
 		void scriptStore.title;
 		saveScript();
+	});
+
+	// Crash recovery: save state periodically
+	$effect(() => {
+		void scriptStore.scrollPosition;
+		void scriptStore.mode;
+		saveCrashState();
+	});
+
+	// Mark clean exit on beforeunload
+	$effect(() => {
+		function handleBeforeUnload() {
+			clearCrashState();
+			saveScript();
+			saveSettings();
+		}
+
+		window.addEventListener('beforeunload', handleBeforeUnload);
+		return () => window.removeEventListener('beforeunload', handleBeforeUnload);
 	});
 </script>
 

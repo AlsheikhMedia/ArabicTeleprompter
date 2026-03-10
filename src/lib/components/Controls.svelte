@@ -1,16 +1,31 @@
 <script lang="ts">
 	import { settings } from '$lib/stores/settings.svelte';
 	import { scriptStore } from '$lib/stores/script.svelte';
+	import { isTauri } from '$lib/utils/platform';
 
 	function exitToEditor() {
 		scriptStore.mode = 'edit';
 		scriptStore.isPlaying = false;
 	}
+
+	async function openTalentWindow() {
+		if (isTauri()) {
+			const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+			new WebviewWindow('talent', {
+				url: '/talent',
+				title: 'التلقين - شاشة العرض',
+				fullscreen: true,
+				decorations: false
+			});
+		} else {
+			window.open('/talent', '_blank', 'popup,width=1920,height=1080');
+		}
+	}
 </script>
 
 <div class="controls" dir="rtl">
 	<div class="controls-row">
-		<button class="btn-icon btn-back" onclick={exitToEditor} title="رجوع">
+		<button class="btn-icon btn-back" onclick={exitToEditor} title="رجوع (Esc)">
 			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 				<line x1="18" y1="6" x2="6" y2="18" />
 				<line x1="6" y1="6" x2="18" y2="18" />
@@ -47,6 +62,28 @@
 		</div>
 
 		<button
+			class="btn-icon"
+			class:active={settings.mirrorMode}
+			onclick={() => (settings.mirrorMode = !settings.mirrorMode)}
+			title="وضع المرآة (M)"
+		>
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<path d="M12 3v18" />
+				<path d="M8 6l-4 6 4 6" />
+				<path d="M16 6l4 6-4 6" />
+			</svg>
+		</button>
+
+		<button
+			class="btn-icon"
+			class:active={!settings.showTashkeel}
+			onclick={() => (settings.showTashkeel = !settings.showTashkeel)}
+			title="التشكيل"
+		>
+			<span style="font-size: 14px">{settings.showTashkeel ? 'شَكل' : 'شكل'}</span>
+		</button>
+
+		<button
 			class="btn-icon btn-reset"
 			onclick={() => (scriptStore.scrollPosition = 0)}
 			title="البداية"
@@ -56,24 +93,32 @@
 				<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
 			</svg>
 		</button>
+
+		<button class="btn-icon" onclick={openTalentWindow} title="شاشة العرض">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<rect x="2" y="3" width="20" height="14" rx="2" />
+				<line x1="8" y1="21" x2="16" y2="21" />
+				<line x1="12" y1="17" x2="12" y2="21" />
+			</svg>
+		</button>
 	</div>
 
 	<div class="controls-hint">
-		مسافة: تشغيل/إيقاف &nbsp; | &nbsp; سهم لأعلى/لأسفل: تمرير &nbsp; | &nbsp; +/−: سرعة
-		&nbsp; | &nbsp; Esc: رجوع
+		مسافة: تشغيل/إيقاف &nbsp;|&nbsp; سهم/صفحة: تمرير &nbsp;|&nbsp; +/−: سرعة &nbsp;|&nbsp; M:
+		مرآة &nbsp;|&nbsp; عجلة الماوس: تمرير &nbsp;|&nbsp; Esc: رجوع
 	</div>
 </div>
 
 <style>
 	.controls {
-		background: linear-gradient(transparent, var(--controls-bg) 30%);
+		background: linear-gradient(transparent, var(--controls-bg, rgba(0, 0, 0, 0.85)) 30%);
 		padding: 3rem 2rem 1.25rem;
 	}
 
 	.controls-row {
 		display: flex;
 		align-items: center;
-		gap: 1.5rem;
+		gap: 1rem;
 		justify-content: center;
 		flex-wrap: wrap;
 	}
@@ -82,12 +127,13 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 44px;
-		height: 44px;
+		width: 42px;
+		height: 42px;
 		padding: 0;
 		border-radius: 50%;
 		background: rgba(255, 255, 255, 0.1);
 		color: #fff;
+		flex-shrink: 0;
 	}
 
 	.btn-icon:hover {
@@ -95,9 +141,14 @@
 		color: #fff;
 	}
 
+	.btn-icon.active {
+		background: var(--accent);
+		color: #fff;
+	}
+
 	.btn-icon svg {
-		width: 20px;
-		height: 20px;
+		width: 18px;
+		height: 18px;
 	}
 
 	.btn-play {
@@ -118,7 +169,7 @@
 	.control-group {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
+		gap: 0.5rem;
 		color: rgba(255, 255, 255, 0.7);
 		font-size: 0.85rem;
 	}
@@ -134,14 +185,14 @@
 	}
 
 	.control-group input[type='range'] {
-		width: 100px;
+		width: 90px;
 		background: rgba(255, 255, 255, 0.15);
 	}
 
 	.controls-hint {
 		text-align: center;
 		margin-top: 0.75rem;
-		font-size: 0.75rem;
-		color: rgba(255, 255, 255, 0.3);
+		font-size: 0.7rem;
+		color: rgba(255, 255, 255, 0.25);
 	}
 </style>

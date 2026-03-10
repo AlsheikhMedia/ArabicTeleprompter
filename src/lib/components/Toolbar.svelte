@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { scriptStore, saveScript } from '$lib/stores/script.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { parseFile } from '$lib/utils/import';
 
 	function startPrompting() {
 		if (!scriptStore.text.trim()) return;
@@ -13,15 +14,25 @@
 	async function importFile() {
 		const input = document.createElement('input');
 		input.type = 'file';
-		input.accept = '.txt,.text';
+		input.accept = '.txt,.text,.docx';
 		input.onchange = async () => {
 			const file = input.files?.[0];
-			if (file) {
-				scriptStore.text = await file.text();
-				scriptStore.title = file.name.replace(/\.[^.]+$/, '');
+			if (!file) return;
+			try {
+				const html = await parseFile(file);
+				scriptStore.setContent(html, file.name.replace(/\.[^.]+$/, ''));
+			} catch (err) {
+				console.error('Import failed:', err);
+				alert('فشل استيراد الملف. تأكد من أن الملف بصيغة مدعومة.');
 			}
 		};
 		input.click();
+	}
+
+	function clearText() {
+		if (scriptStore.text && confirm('هل تريد مسح النص الحالي؟')) {
+			scriptStore.setContent('<p></p>');
+		}
 	}
 </script>
 
@@ -30,12 +41,13 @@
 		<h1 class="app-title">التلقين العربي</h1>
 	</div>
 	<div class="toolbar-end">
-		<button class="btn-import" onclick={importFile}>استيراد ملف</button>
+		<button class="btn-secondary" onclick={importFile}>استيراد</button>
+		<button class="btn-secondary" onclick={clearText}>مسح</button>
 		<button class="btn-play" onclick={startPrompting} disabled={!scriptStore.text.trim()}>
 			تشغيل
 		</button>
 		<button
-			class="btn-settings"
+			class="btn-secondary"
 			onclick={() => (settings.showSettings = !settings.showSettings)}
 		>
 			الإعدادات
@@ -66,6 +78,11 @@
 		display: flex;
 		gap: 0.5rem;
 		align-items: center;
+	}
+
+	.btn-secondary {
+		background: var(--bg-tertiary);
+		color: var(--text-primary);
 	}
 
 	.btn-play {

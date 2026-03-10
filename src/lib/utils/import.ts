@@ -1,0 +1,51 @@
+function escapeHtml(text: string): string {
+	return text
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;');
+}
+
+export function plainTextToHtml(text: string): string {
+	return text
+		.split('\n')
+		.map((line) => (line.trim() === '' ? '<p></p>' : `<p>${escapeHtml(line)}</p>`))
+		.join('');
+}
+
+export function isHtml(content: string): boolean {
+	return /<[a-z][\s\S]*>/i.test(content.trim());
+}
+
+export async function importTxt(file: File): Promise<string> {
+	const text = await file.text();
+	return plainTextToHtml(text);
+}
+
+export async function importDocx(file: File): Promise<string> {
+	const mammoth = await import('mammoth');
+	const arrayBuffer = await file.arrayBuffer();
+	const result = await mammoth.convertToHtml({ arrayBuffer });
+	return result.value;
+}
+
+export async function parseFile(file: File): Promise<string> {
+	const ext = file.name.split('.').pop()?.toLowerCase();
+	switch (ext) {
+		case 'docx':
+			return importDocx(file);
+		case 'txt':
+		case 'text':
+		default:
+			return importTxt(file);
+	}
+}
+
+export function countWordsInHtml(html: string): number {
+	const text = html
+		.replace(/<[^>]+>/g, ' ')
+		.replace(/&[a-z]+;/gi, ' ')
+		.replace(/\s+/g, ' ')
+		.trim();
+	return text ? text.split(/\s+/).length : 0;
+}

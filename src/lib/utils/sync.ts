@@ -12,7 +12,7 @@ export interface SyncState {
 	showTashkeel: boolean;
 }
 
-function isValidSyncState(data: unknown): data is SyncState {
+export function isValidSyncState(data: unknown): data is SyncState {
 	if (data === null || typeof data !== 'object') return false;
 	const d = data as Record<string, unknown>;
 

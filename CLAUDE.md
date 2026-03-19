@@ -13,11 +13,13 @@ pnpm install              # Install dependencies
 pnpm dev                  # Vite dev server on localhost:1420
 pnpm build                # Build frontend (output: build/)
 pnpm check                # svelte-kit sync + svelte-check (type checking)
+pnpm test                 # Run unit tests (vitest)
+pnpm test:watch           # Run tests in watch mode
 pnpm tauri dev             # Full Tauri dev mode (Vite + native window)
 pnpm tauri build           # Production build (output: src-tauri/target/release/bundle/)
 ```
 
-No test runner is configured. No linter is configured.
+Tests use Vitest with jsdom. Test files live next to source (`*.test.ts`). No linter is configured.
 
 ## Architecture
 

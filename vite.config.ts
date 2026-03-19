@@ -7,5 +7,10 @@ export default defineConfig({
 	server: {
 		port: 1420,
 		strictPort: true
+	},
+	test: {
+		include: ['src/**/*.test.ts'],
+		environment: 'jsdom',
+		setupFiles: ['src/test-setup.ts']
 	}
 });

@@ -7,9 +7,9 @@ describe('isTauri', () => {
 	});
 
 	it('returns true when __TAURI_INTERNALS__ exists', () => {
-		(window as Record<string, unknown>).__TAURI_INTERNALS__ = {};
+		(window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
 		expect(isTauri()).toBe(true);
-		delete (window as Record<string, unknown>).__TAURI_INTERNALS__;
+		delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
 	});
 });
 

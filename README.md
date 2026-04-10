@@ -12,8 +12,19 @@
 [![Platform](https://img.shields.io/badge/platform-macOS%20·%20Windows%20·%20Linux-555?style=flat-square)](#التثبيت)
 [![Homebrew](https://img.shields.io/badge/Homebrew-قريباً-FBB040?style=flat-square&logo=homebrew&logoColor=white)](#التثبيت)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+[![Website](https://img.shields.io/badge/الموقع-alsheikhmedia.com-0A66C2?style=flat-square&logo=google-chrome&logoColor=white)](https://alsheikhmedia.com)
 
 </div>
+
+---
+
+## 🌐 النسخة الإلكترونية · Try it Online
+
+**لا تريد تثبيت برنامج؟** جرّب التلقين العربي مباشرةً في متصفحك دون أي تثبيت:
+
+> **[alsheikhmedia.com](https://alsheikhmedia.com)** — نسخة إلكترونية مجانية بالكامل
+
+*Don't want to install? Use the **free web version** right in your browser at [alsheikhmedia.com](https://alsheikhmedia.com).*
 
 ---
 
@@ -209,3 +220,13 @@ pnpm tauri build
 ## الرخصة
 
 MIT
+
+---
+
+<div align="center">
+
+صُنع بـ ❤️ بواسطة [AlSheikh Media](https://alsheikhmedia.com)
+
+*Made with ❤️ by [AlSheikh Media](https://alsheikhmedia.com)*
+
+</div>

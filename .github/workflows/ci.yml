@@ -26,8 +26,13 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      # Fails fast if pnpm-lock.yaml is out of sync with package.json.
+      # Fix: run `pnpm install` locally and commit the updated lock file.
+      - name: Lockfile integrity check
+        run: pnpm install --frozen-lockfile --dry-run
+
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Type check
         run: pnpm check

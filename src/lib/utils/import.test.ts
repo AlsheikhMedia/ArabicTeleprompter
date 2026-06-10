@@ -100,8 +100,29 @@ describe('parseFile', () => {
 		await expect(parseFile(file)).rejects.toThrow('بدون امتداد');
 	});
 
+	it('rejects files with unsupported extension', async () => {
+		const file = new File(['data'], 'file.csv', { type: 'text/csv' });
+		await expect(parseFile(file)).rejects.toThrow('غير مدعومة');
+	});
+
+	it('rejects files with trailing dot', async () => {
+		const file = new File(['data'], 'file.', { type: 'text/plain' });
+		await expect(parseFile(file)).rejects.toThrow('بدون امتداد');
+	});
+
+	it('rejects hidden files (starting with dot)', async () => {
+		const file = new File(['data'], '.hidden', { type: 'text/plain' });
+		await expect(parseFile(file)).rejects.toThrow('بدون امتداد');
+	});
+
 	it('allows TXT file with correct MIME type', async () => {
 		const file = new File(['hello world'], 'test.txt', { type: 'text/plain' });
+		const result = await parseFile(file);
+		expect(result).toBe('<p>hello world</p>');
+	});
+
+	it('allows TXT file with empty MIME type (browser may leave type empty)', async () => {
+		const file = new File(['hello world'], 'test.txt', { type: '' });
 		const result = await parseFile(file);
 		expect(result).toBe('<p>hello world</p>');
 	});

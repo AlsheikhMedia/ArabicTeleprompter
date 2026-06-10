@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { plainTextToHtml, isHtml, countWordsInHtml, importTxt } from './import';
+import { plainTextToHtml, isHtml, countWordsInHtml, importTxt, parseFile } from './import';
 
 describe('plainTextToHtml', () => {
 	it('wraps lines in <p> tags', () => {
@@ -86,5 +86,29 @@ describe('importTxt', () => {
 		const file = new File([''], 'empty.txt', { type: 'text/plain' });
 		const result = await importTxt(file);
 		expect(result).toBe('<p></p>');
+	});
+});
+
+describe('parseFile', () => {
+	it('rejects files with mismatched MIME type', async () => {
+		const file = new File(['<p>evil</p>'], 'test.txt', { type: 'text/html' });
+		await expect(parseFile(file)).rejects.toThrow('نوع الملف غير مطابق');
+	});
+
+	it('rejects files with no extension', async () => {
+		const file = new File(['hello'], 'noext', { type: 'text/plain' });
+		await expect(parseFile(file)).rejects.toThrow('بدون امتداد');
+	});
+
+	it('allows TXT file with correct MIME type', async () => {
+		const file = new File(['hello world'], 'test.txt', { type: 'text/plain' });
+		const result = await parseFile(file);
+		expect(result).toBe('<p>hello world</p>');
+	});
+
+	it('rejects files exceeding 10MB', async () => {
+		const large = new Uint8Array(11 * 1024 * 1024);
+		const file = new File([large], 'big.txt', { type: 'text/plain' });
+		await expect(parseFile(file)).rejects.toThrow('حجم الملف');
 	});
 });

@@ -37,11 +37,27 @@ export async function importDocx(file: File): Promise<string> {
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
+const ALLOWED_MIME_TYPES: Record<string, string[]> = {
+	docx: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+	txt: ['text/plain'],
+	text: ['text/plain']
+};
+
 export async function parseFile(file: File): Promise<string> {
 	if (file.size > MAX_FILE_SIZE) {
 		throw new Error('حجم الملف يتجاوز الحد الأقصى (10 ميغابايت)');
 	}
 	const ext = file.name.split('.').pop()?.toLowerCase();
+	if (!ext || !file.name.includes('.')) {
+		throw new Error('الملف بدون امتداد — يرجى استخدام ملف بصيغة TXT أو DOCX');
+	}
+
+	// Validate MIME type matches extension (defense-in-depth)
+	const allowedTypes = ALLOWED_MIME_TYPES[ext];
+	if (allowedTypes && file.type && !allowedTypes.includes(file.type)) {
+		throw new Error(`نوع الملف غير مطابق للامتداد (${file.type} ≠ .${ext})`);
+	}
+
 	switch (ext) {
 		case 'docx':
 			return importDocx(file);

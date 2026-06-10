@@ -14,16 +14,16 @@
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.10",
-    "@sveltejs/kit": "^2.53.4",
+    "@sveltejs/kit": "^2.60.1",
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "@tauri-apps/cli": "^2.10.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@types/dompurify": "^3.2.0",
     "jsdom": "^29.0.0",
-    "svelte": "^5.53.7",
+    "svelte": "^5.55.7",
     "svelte-check": "^4.4.5",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1",
+    "vite": "^7.3.2",
     "vitest": "^4.1.0"
   },
   "dependencies": {
@@ -39,12 +39,16 @@
     "@tiptap/extension-underline": "^3.20.1",
     "@tiptap/pm": "^3.20.1",
     "@tiptap/starter-kit": "^3.20.1",
-    "dompurify": "^3.3.3",
+    "dompurify": "^3.4.0",
     "mammoth": "^1.11.0"
   },
   "pnpm": {
     "overrides": {
-      "devalue": ">=5.6.4"
+      "devalue": ">=5.8.1",
+      "@xmldom/xmldom": ">=0.8.13",
+      "picomatch": ">=4.0.4",
+      "postcss": ">=8.5.10",
+      "cookie": ">=0.7.0"
     }
   }
 }

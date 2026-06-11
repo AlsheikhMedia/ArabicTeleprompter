@@ -30,26 +30,50 @@ export async function importDocx(file: File): Promise<string> {
 	const arrayBuffer = await file.arrayBuffer();
 	const result = await (mammoth as typeof mammothModule).convertToHtml({ arrayBuffer });
 	return DOMPurify.sanitize(result.value, {
-		ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'span', 'mark', 'sub', 'sup'],
-		ALLOWED_ATTR: ['dir', 'class']
+		ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'span', 'mark', 'sub', 'sup', 'div'],
+		ALLOWED_ATTR: ['dir', 'class', 'data-segment-marker']
 	});
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
+const SUPPORTED_EXTENSIONS: Record<string, (file: File) => Promise<string>> = {
+	docx: importDocx,
+	txt: importTxt,
+	text: importTxt
+};
+
+const EXPECTED_MIME_TYPES: Record<string, string> = {
+	docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+	txt: 'text/plain',
+	text: 'text/plain'
+};
+
 export async function parseFile(file: File): Promise<string> {
 	if (file.size > MAX_FILE_SIZE) {
 		throw new Error('حجم الملف يتجاوز الحد الأقصى (10 ميغابايت)');
 	}
-	const ext = file.name.split('.').pop()?.toLowerCase();
-	switch (ext) {
-		case 'docx':
-			return importDocx(file);
-		case 'txt':
-		case 'text':
-		default:
-			return importTxt(file);
+
+	// Extract extension in a single pass
+	const dotIndex = file.name.lastIndexOf('.');
+	if (dotIndex <= 0 || dotIndex === file.name.length - 1) {
+		throw new Error('الملف بدون امتداد — يرجى استخدام ملف بصيغة TXT أو DOCX');
 	}
+	const ext = file.name.slice(dotIndex + 1).toLowerCase();
+
+	// Reject unsupported extensions
+	const importer = SUPPORTED_EXTENSIONS[ext];
+	if (!importer) {
+		throw new Error(`صيغة الملف .${ext} غير مدعومة — يرجى استخدام TXT أو DOCX`);
+	}
+
+	// Validate MIME type matches extension (defense-in-depth)
+	const expectedType = EXPECTED_MIME_TYPES[ext];
+	if (file.type && file.type !== expectedType) {
+		throw new Error(`نوع الملف غير مطابق للامتداد (${file.type} ≠ .${ext})`);
+	}
+
+	return importer(file);
 }
 
 export function countWordsInHtml(html: string): number {

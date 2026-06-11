@@ -1,0 +1,26 @@
+# Preflight per-project config for ArabicTeleprompter.
+# Stack: SvelteKit + Tauri desktop, pnpm, Svelte 5.
+# Cross-OS Tauri release binaries remain on GitHub Actions (release.yml),
+# because Linux-only workstations cannot build macOS/Windows artifacts.
+# Preflight here handles ONLY the Linux-side web bundle + type/test gates.
+
+[jobs]
+typecheck = true
+test = true
+build = true
+token = false
+drizzle = false
+squawk = false
+links = false
+seo = false
+
+[heavy]
+trivy = true
+semgrep = true
+audit = true
+links_full = false
+seo_full = false
+
+[cache]
+fast_ttl_sec = 300
+heavy_ttl_sec = 259200
